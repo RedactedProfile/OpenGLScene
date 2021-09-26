@@ -1,10 +1,14 @@
 #include <iostream>
 #include <string>
+#include <vector>
+
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
+
+#include <glm\glm.hpp>
 
 #include <cstdio>
 #include <rapidjson\rapidjson.h>
@@ -25,6 +29,32 @@ struct State
 	static inline SDL_Window* m_window;
 	static inline SDL_GLContext m_glContext;
 } State;
+
+
+struct Vertex
+{
+	glm::vec3 Position;
+	glm::vec3 Normal;
+	glm::vec3 TexCoords;
+};
+
+struct Texture 
+{
+	uint32_t id;
+	std::string type;
+};
+
+class Mesh {
+public:
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+	std::vector<Texture> textures;
+
+	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<Texture> textures);
+private:
+	uint32_t VAO, VBO, EBO;
+};
+
 
 void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
 {
@@ -57,6 +87,16 @@ void ParseConfig()
 	if (_configDoc.HasMember("win_title") && _configDoc["win_title"].IsString())
 		Config::win_title = _configDoc["win_title"].GetString();
 	
+}
+
+void LoadScene()
+{
+	// Room
+
+	
+	// Sphere 
+
+	// Light
 }
 
 void Clear()
@@ -164,6 +204,7 @@ int main()
 		}
 	}
 	
+	LoadScene();
 
 	while (!quit)
 	{

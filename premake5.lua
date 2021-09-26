@@ -60,13 +60,13 @@ project "Game"
         }
 
     filter "configurations:Debug"
-        defines "XMAS_DEBUG"
+        defines "_DEBUG"
         symbols "On"
 
     filter "configurations:Release"
-        defines "XMAS_RELEASE"
+        defines "_RELEASE"
         optimize "On"
 
     filter "configurations:Dist"
-        defines "XMAS_DIST"
+        defines "_RELEASE"
         symbols "On"

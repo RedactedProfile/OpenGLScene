@@ -27,3 +27,4 @@ redist
 /**/*.sln
 /**/*.vcxproj*
 /dist
+packages/*

@@ -1,3 +1,5 @@
+#include <fstream>
+#include <sstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -51,15 +53,159 @@ struct Texture
 	std::string type;
 };
 
+class Shader
+{
+public:
+	uint32_t ID;
+
+	Shader(std::string vertexPath, std::string fragmentPath)
+	{
+		// 1. Read Shader Code from File
+		std::string vertexCode,
+					fragmentCode;
+		std::ifstream vertexShaderFile, 
+					  fragmentShaderFile;
+
+		vertexShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		fragmentShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+		try
+		{
+			// open 
+			vertexShaderFile.open(vertexPath);
+			fragmentShaderFile.open(fragmentPath);
+			std::stringstream vertexShaderStream, 
+							  fragmentShaderStream;
+
+			vertexShaderStream << vertexShaderFile.rdbuf();
+			fragmentShaderStream << fragmentShaderFile.rdbuf();
+
+			vertexShaderFile.close();
+			fragmentShaderFile.close();
+
+			vertexCode = vertexShaderStream.str();
+			fragmentCode = fragmentShaderStream.str();
+
+		}
+		catch (std::ifstream::failure e)
+		{
+			std::cout << "Error Reading Shader: " << e.what() << std::endl;
+		}
+
+		const char* vShaderCode = vertexCode.c_str();
+		const char* fShaderCode = fragmentCode.c_str();
+
+		// 2. Compile Shader Code
+		uint32_t vertex, 
+				 fragment;
+		int32_t success;
+		char infoLog[512];
+
+		vertex = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vertex, 1, &vShaderCode, NULL);
+		glCompileShader(vertex);
+		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+			std::cout << "Error Compiling Vertex Shader: " << std::endl << infoLog << std::endl;
+		}
+
+		fragment = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(fragment, 1, &fShaderCode, NULL);
+		glCompileShader(fragment);
+		glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+			std::cout << "Error Compiling Fragment Shader: " << std::endl << infoLog << std::endl;
+		}
+
+		// create shader program
+		ID = glCreateProgram();
+		glAttachShader(ID, vertex);
+		glAttachShader(ID, fragment);
+		glLinkProgram(ID);
+		glGetProgramiv(ID, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			glGetProgramInfoLog(ID, 512, NULL, infoLog);
+			std::cout << "Error Compiling Shader Program: " << std::endl << infoLog << std::endl;
+		}
+
+		glDeleteShader(vertex);
+		glDeleteShader(fragment);
+
+	}
+
+	void Use()
+	{
+		glUseProgram(ID);
+	}
+
+	void SetUniformBool(const std::string& name, bool value)
+	{
+		glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
+	}
+
+	void SetUniformInt(const std::string& name, int32_t value)
+	{
+		glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+	}
+
+	void SetUniformFloat(const std::string& name, float_t value)
+	{
+		glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+	}
+};
+
 class Mesh {
 public:
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 	std::vector<Texture> textures;
 
-	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<Texture> textures);
+	Mesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices, std::vector<Texture> textures)
+	{
+		this->vertices = vertices;
+		this->indices = indices;
+		this->textures = textures;
+
+		SetupMesh();
+	};
+
+	void Draw()
+	{
+
+	};
 private:
 	uint32_t VAO, VBO, EBO;
+	void SetupMesh()
+	{
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &EBO);
+
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(int32_t), &indices[0], GL_STATIC_DRAW);
+
+		// vert pos
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+		// vert norm
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+		// vert tex coords
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+		glBindVertexArray(0);
+	};
 };
 
 
@@ -112,10 +258,7 @@ void LoadScene(const std::string file)
 		return;
 	}
 
-	// Room
 
-	
-	// Sphere 
 
 	// Light
 }

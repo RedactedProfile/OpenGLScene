@@ -15,6 +15,10 @@
 #include <rapidjson\document.h>
 #include <rapidjson\filereadstream.h>
 
+#include <assimp\Importer.hpp>
+#include <assimp\scene.h>
+#include <assimp\postprocess.h>
+
 struct Config
 {
 	static inline int32_t screen_width = 800;
@@ -22,12 +26,15 @@ struct Config
 	static inline bool fullscreen = false;
 	static inline bool vsync = false;
 	static inline std::string win_title = "Whatever";
+	static inline std::string scene = "";
 } Config;
 
 struct State
 {
 	static inline SDL_Window* m_window;
 	static inline SDL_GLContext m_glContext;
+	static inline int32_t m_time = 0;
+	static inline int32_t m_deltaTime = 0;
 } State;
 
 
@@ -86,11 +93,25 @@ void ParseConfig()
 	
 	if (_configDoc.HasMember("win_title") && _configDoc["win_title"].IsString())
 		Config::win_title = _configDoc["win_title"].GetString();
+
+	if (_configDoc.HasMember("scene") && _configDoc["scene"].IsString())
+		Config::scene = _configDoc["scene"].GetString();
 	
 }
 
-void LoadScene()
+void LoadScene(const std::string file)
 {
+	std::cout << "Loading scene: " << file << std::endl;
+	// Assimp Setup
+	Assimp::Importer importer;
+
+	const aiScene* scene = importer.ReadFile(file, aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_SortByPType);
+	// If the import failed, report it
+	if (nullptr == scene) {
+		std::cout << "Failed to import: " << file << ": " << importer.GetErrorString() << std::endl;
+		return;
+	}
+
 	// Room
 
 	
@@ -109,11 +130,6 @@ void Update()
 {
 	
 	
-
-}
-
-void FixedUpdate()
-{
 
 }
 
@@ -204,8 +220,11 @@ int main()
 		}
 	}
 	
-	LoadScene();
 
+
+	LoadScene(Config::scene);
+
+	State::m_time = SDL_GetTicks();
 	while (!quit)
 	{
 		SDL_WaitEvent(&event);
@@ -217,11 +236,15 @@ int main()
 			break;
 		}
 
+		uint32_t now = SDL_GetTicks();
+		State::m_deltaTime = now - State::m_time;
+
 		Clear();
 		Update();
-		FixedUpdate();
 		LateUpdate();
 		Present();
+
+		State::m_time = now;
 	}
 
 	SDL_Quit();

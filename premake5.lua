@@ -31,13 +31,15 @@ project "Game"
         "Vendor/sdl2/include",
         "Vendor/glew/include",
         "Vendor/spdlog/include",
-        "Vendor/glm"
+        "Vendor/glm",
+        "Vendor/assimp/include"
     }
 
     libdirs
     {
         "Vendor/sdl2/lib/x64",
-        "Vendor/glew/lib/Release/x64"
+        "Vendor/glew/lib/Release/x64",
+        "Vendor/assimp/lib/RelWithDebInfo"
     }
 
     links 
@@ -45,7 +47,10 @@ project "Game"
         "glew32s",
         "SDL2main",
         "SDL2", 
-        "opengl32"
+        "opengl32",
+        "zlibstatic",
+        "IrrXML",
+        "assimp-vc142-mt"
     }
 
     filter "system:windows"

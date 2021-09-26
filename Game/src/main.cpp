@@ -13,9 +13,10 @@
 
 struct Config
 {
-	static inline int16_t screen_width = 800;
-	static inline int16_t screen_height = 600;
+	static inline int32_t screen_width = 800;
+	static inline int32_t screen_height = 600;
 	static inline bool fullscreen = false;
+	static inline bool vsync = false;
 	static inline std::string win_title = "Whatever";
 } Config;
 
@@ -43,10 +44,16 @@ void ParseConfig()
 
 	if (_configDoc.HasMember("screen_width") && _configDoc["screen_width"].IsInt())
 		Config::screen_width = _configDoc["screen_width"].GetInt();
+	
 	if (_configDoc.HasMember("screen_height") && _configDoc["screen_height"].IsInt())
 		Config::screen_height = _configDoc["screen_height"].GetInt();
+	
 	if (_configDoc.HasMember("fullscreen") && _configDoc["fullscreen"].IsBool())
-		Config::screen_height = _configDoc["fullscreen"].GetBool();
+		Config::fullscreen = _configDoc["fullscreen"].GetBool();
+	
+	if (_configDoc.HasMember("vsync") && _configDoc["vsync"].IsBool())
+		Config::vsync = _configDoc["vsync"].GetBool();
+	
 	if (_configDoc.HasMember("win_title") && _configDoc["win_title"].IsString())
 		Config::win_title = _configDoc["win_title"].GetString();
 	
@@ -146,6 +153,17 @@ int main()
 	SDL_GL_MakeCurrent(State::m_window, State::m_glContext);
 
 	std::cout << "GLVERSION: " << glGetString(GL_VERSION) << std::endl;
+
+	// VSync
+	if (Config::vsync)
+	{
+		if (SDL_GL_SetSwapInterval(1) < 0)
+		{
+			std::cout << "Couldn't set vsync" << std::endl;
+			return false;
+		}
+	}
+	
 
 	while (!quit)
 	{

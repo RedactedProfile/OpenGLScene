@@ -3,6 +3,7 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 
+#define GLEW_STATIC
 #include <GL/glew.h>
 
 #include <cstdio>
@@ -24,6 +25,10 @@ struct State
 	static inline SDL_GLContext m_glContext;
 } State;
 
+void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+	std::cout << "[OpenGL Error](" << type << ") " << message << std::endl;
+}
 
 void ParseConfig()
 {
@@ -78,23 +83,30 @@ void Present()
 int main()
 {
 	ParseConfig();
-	std::cout << "Launching " << Config::win_title;
+	std::cout << "Launching " << Config::win_title << std::endl;
 
 	bool quit = false;
 	SDL_Event event;
 
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_EVERYTHING);
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
 	SDL_Window* m_window = SDL_CreateWindow(Config::win_title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, Config::screen_width, Config::screen_height, SDL_WINDOW_OPENGL);
 	if (!m_window) 
 	{
-		std::cout << "Could not create window: " << SDL_GetError() << "\n";
+		std::cout << "Could not create window: " << SDL_GetError() << std::endl;
 		return 0;
 	}
 	State::m_window = m_window;
@@ -102,12 +114,38 @@ int main()
 	SDL_GLContext m_glContext = SDL_GL_CreateContext(m_window);
 	if (!m_glContext)
 	{
-		std::cout << "Could not create context: " << SDL_GetError() << "\n";
+		std::cout << "Could not create context: " << SDL_GetError() << std::endl;
 		return 0;
 	}
 	State::m_glContext = m_glContext;
 
+	glewExperimental = GL_TRUE;
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		std::cout << "glew failed to initialize: " << glewGetErrorString(err) << std::endl;
+		return false;
+	}
+
+#if _DEBUG 
+	// Enable debug output
+	if (glDebugMessageCallback)
+	{
+		std::cout << "Registering OpenGL Debug callback" << std::endl;
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(MessageCallback, nullptr);
+		GLuint unusedIds = 0;
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, true);
+	}
+	else 
+	{
+		std::cout << "glDebugMessageCallback not available" << std::endl;
+	}
+#endif
+
 	SDL_GL_MakeCurrent(State::m_window, State::m_glContext);
+
+	std::cout << "GLVERSION: " << glGetString(GL_VERSION) << std::endl;
 
 	while (!quit)
 	{

@@ -61,7 +61,7 @@ void ParseConfig()
 
 void Clear()
 {
-	glClearColor(100.0f / 1000, 149.0f / 1000, 237.0f / 1000, 1.0f);
+	glClearColor(0.39f, 0.58f, 0.93f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 

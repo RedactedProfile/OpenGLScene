@@ -174,9 +174,34 @@ public:
 		SetupMesh();
 	};
 
-	void Draw()
+	void Draw(Shader &shader)
 	{
+		int32_t diffuseNr = 1, 
+				specularNr = 1;
+		for (int32_t i = 0; i < textures.size(); i++)
+		{
+			glActiveTexture(GL_TEXTURE0 + 1);
+			std::string number;
+			std::string name = textures[i].type;
+			if (name == "texture_diffuse")
+			{
+				number = std::to_string(diffuseNr++);
+			}
+			else if (name == "texture_specular")
+			{
+				number = std::to_string(specularNr++);
+			}
 
+			shader.SetUniformFloat(("material." + name + number).c_str(), i);
+			glBindTexture(GL_TEXTURE_2D, textures[i].id);
+		}
+
+		glActiveTexture(GL_TEXTURE0);
+
+		// draw mesh 
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 	};
 private:
 	uint32_t VAO, VBO, EBO;
@@ -206,6 +231,12 @@ private:
 
 		glBindVertexArray(0);
 	};
+};
+
+class Model
+{
+public:
+	
 };
 
 
@@ -247,7 +278,7 @@ void ParseConfig()
 
 void LoadScene(const std::string file)
 {
-	std::cout << "Loading scene: " << file << std::endl;
+	std::cout << "Loading scene data: " << file << std::endl;
 	// Assimp Setup
 	Assimp::Importer importer;
 
@@ -257,6 +288,17 @@ void LoadScene(const std::string file)
 		std::cout << "Failed to import: " << file << ": " << importer.GetErrorString() << std::endl;
 		return;
 	}
+
+	std::cout << "Loaded:" << std::endl
+		<< "  Meshes: " << scene->mNumMeshes << std::endl
+		<< "  Materials: " << scene->mNumMaterials << std::endl
+		<< "  Textures: " << scene->mNumTextures << std::endl
+		<< "  Lights: " << scene->mNumLights << std::endl
+		<< "  Cameras: " << scene->mNumCameras << std::endl
+		<< "  Animations: " << scene->mNumAnimations << std::endl
+	;
+
+	std::cout << "Constructing Scene " << std::endl;
 
 
 
